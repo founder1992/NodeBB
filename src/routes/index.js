@@ -47,9 +47,15 @@ function globalModRoutes(app, middleware, controllers) {
 	setupPageRoute(app, '/ip-blacklist', middleware, [], controllers.globalMods.ipBlacklist);
 }
 
+//function topicRoutes(app, middleware, controllers) {
+//	setupPageRoute(app, '/topic/:topic_id/:slug/:post_index?', middleware, [], controllers.topics.get);
+//	setupPageRoute(app, '/topic/:topic_id/:slug?', middleware, [], controllers.topics.get);
+//}
+
 function topicRoutes(app, middleware, controllers) {
-	setupPageRoute(app, '/topic/:topic_id/:slug/:post_index?', middleware, [], controllers.topics.get);
-	setupPageRoute(app, '/topic/:topic_id/:slug?', middleware, [], controllers.topics.get);
+    setupPageRoute(app, '/topic/:topic_id/:slug/:post_index?', middleware, [], controllers.topics.get);
+    setupPageRoute(app, '/topic/:topic_id/:slug?', middleware, [], controllers.topics.get);
+    setupPageRoute(app, '/topics/:topic_ids/:slug?', middleware, [], controllers.topics.newAdd_getByIDs);
 }
 
 function postRoutes(app, middleware, controllers) {

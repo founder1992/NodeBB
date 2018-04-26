@@ -37,42 +37,100 @@ Posts.getPidsFromSet = function (set, start, stop, reverse, callback) {
 	db[reverse ? 'getSortedSetRevRange' : 'getSortedSetRange'](set, start, stop, callback);
 };
 
-Posts.getPostsByPids = function (pids, uid, callback) {
-	if (!Array.isArray(pids) || !pids.length) {
-		return callback(null, []);
-	}
+//Posts.getPostsByPids = function (pids, uid, callback) {
+//	if (!Array.isArray(pids) || !pids.length) {
+//		return callback(null, []);
+//	}
+//
+//	async.waterfall([
+//		function (next) {
+//			var keys = pids.map(function (pid) {
+//				return 'post:' + pid;
+//			});
+//			db.getObjects(keys, next);
+//		},
+//		function (posts, next) {
+//			async.map(posts, function (post, next) {
+//				if (!post) {
+//					return next();
+//				}
+//				post.upvotes = parseInt(post.upvotes, 10) || 0;
+//				post.downvotes = parseInt(post.downvotes, 10) || 0;
+//				post.votes = post.upvotes - post.downvotes;
+//				post.timestampISO = utils.toISOString(post.timestamp);
+//				post.editedISO = parseInt(post.edited, 10) !== 0 ? utils.toISOString(post.edited) : '';
+//				Posts.parsePost(post, next);
+//			}, next);
+//		},
+//		function (posts, next) {
+//			plugins.fireHook('filter:post.getPosts', { posts: posts, uid: uid }, next);
+//		},
+//		function (data, next) {
+//			if (!data || !Array.isArray(data.posts)) {
+//				return next(null, []);
+//			}
+//			data.posts = data.posts.filter(Boolean);
+//			next(null, data.posts);
+//		},
+//	], callback);
+//};
 
-	async.waterfall([
-		function (next) {
-			var keys = pids.map(function (pid) {
-				return 'post:' + pid;
-			});
-			db.getObjects(keys, next);
-		},
-		function (posts, next) {
-			async.map(posts, function (post, next) {
-				if (!post) {
-					return next();
-				}
-				post.upvotes = parseInt(post.upvotes, 10) || 0;
-				post.downvotes = parseInt(post.downvotes, 10) || 0;
-				post.votes = post.upvotes - post.downvotes;
-				post.timestampISO = utils.toISOString(post.timestamp);
-				post.editedISO = parseInt(post.edited, 10) !== 0 ? utils.toISOString(post.edited) : '';
-				Posts.parsePost(post, next);
-			}, next);
-		},
-		function (posts, next) {
-			plugins.fireHook('filter:post.getPosts', { posts: posts, uid: uid }, next);
-		},
-		function (data, next) {
-			if (!data || !Array.isArray(data.posts)) {
-				return next(null, []);
-			}
-			data.posts = data.posts.filter(Boolean);
-			next(null, data.posts);
-		},
-	], callback);
+Posts.getPostsByPids = function (pids, uid, callback) {
+    if (!Array.isArray(pids) || !pids.length) {
+        return callback(null, []);
+    }
+
+    var newAddPosts = [];
+
+    async.waterfall([
+        function (next) {
+            var keys = pids.map(function (pid) {
+                return 'post:' + pid;
+            });
+            db.getObjects(keys, next);
+        },
+        function (posts, next) {
+            async.map(posts, function (post, next) {
+                if (!post) {
+                    return next();
+                }
+                post.upvotes = parseInt(post.upvotes, 10) || 0;
+                post.downvotes = parseInt(post.downvotes, 10) || 0;
+                post.votes = post.upvotes - post.downvotes;
+                post.timestampISO = utils.toISOString(post.timestamp);
+                post.editedISO = parseInt(post.edited, 10) !== 0 ? utils.toISOString(post.edited) : '';
+                Posts.parsePost(post, next);
+            }, next);
+        },
+        function (posts, next) {
+            newAddPosts = posts;
+            if (!Array.isArray(pids) || !pids.length) {
+                return callback(null, []);
+            }
+            Posts.hasBookmarked(pids, uid, next)
+        },
+        function (result, next) {
+            var keys = [];
+            for (var i = 0; i < newAddPosts.length; i += 1) {
+                newAddPosts[i].bookmarked = result[i];
+                keys.push('pid:' + pids[i] + ':users_bookmarked')
+            }
+            db.setsCount(keys, next);
+        },
+        function (result, next) {
+            for (var i = 0; i < newAddPosts.length; i += 1) {
+                newAddPosts[i].bookmarks = result[i]
+            }
+            plugins.fireHook('filter:post.getPosts', { posts: newAddPosts, uid: uid }, next);
+        },
+        function (data, next) {
+            if (!data || !Array.isArray(data.posts)) {
+                return next(null, []);
+            }
+            data.posts = data.posts.filter(Boolean);
+            next(null, data.posts);
+        },
+    ], callback);
 };
 
 Posts.getPostSummariesFromSet = function (set, uid, start, stop, callback) {

@@ -55,12 +55,6 @@ module.exports = function (User) {
 
 				var lasttime = userData[field] || 0;
 
-				if (parseInt(meta.config.newbiePostDelay, 10) > 0 && parseInt(meta.config.newbiePostDelayThreshold, 10) > parseInt(userData.reputation, 10) && now - parseInt(lasttime, 10) < parseInt(meta.config.newbiePostDelay, 10) * 1000) {
-					return next(new Error('[[error:too-many-posts-newbie, ' + meta.config.newbiePostDelay + ', ' + meta.config.newbiePostDelayThreshold + ']]'));
-				} else if (now - parseInt(lasttime, 10) < parseInt(meta.config.postDelay, 10) * 1000) {
-					return next(new Error('[[error:too-many-posts, ' + meta.config.postDelay + ']]'));
-				}
-
 				next();
 			},
 		], callback);

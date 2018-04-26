@@ -16,6 +16,20 @@ var utils = require('../utils');
 
 var topicsController = module.exports;
 
+topicsController.newAdd_getByIDs = function (req, res, callback) {
+    var tids = req.params.topic_ids;
+    var tidsArray = tids.split("+");
+
+    async.waterfall([
+        function (next) {
+            topics.getTopicsByTids(tidsArray, req.uid, next);
+        },
+        function (topicData) {
+            res.json(topicData);
+        },
+    ], callback)
+};
+
 topicsController.get = function (req, res, callback) {
 	var tid = req.params.topic_id;
 	var currentPage = parseInt(req.query.page, 10) || 1;

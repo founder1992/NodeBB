@@ -87,103 +87,205 @@ Topics.getTopics = function (tids, uid, callback) {
 	], callback);
 };
 
+//Topics.getTopicsByTids = function (tids, uid, callback) {
+//	if (!Array.isArray(tids) || !tids.length) {
+//		return callback(null, []);
+//	}
+//
+//	var uids;
+//	var cids;
+//	var topics;
+//
+//	async.waterfall([
+//		function (next) {
+//			Topics.getTopicsData(tids, next);
+//		},
+//		function (_topics, next) {
+//			function mapFilter(array, field) {
+//				return array.map(function (topic) {
+//					return topic && topic[field] && topic[field].toString();
+//				}).filter(function (value) {
+//					return utils.isNumber(value);
+//				});
+//			}
+//
+//			topics = _topics;
+//			uids = _.uniq(mapFilter(topics, 'uid'));
+//			cids = _.uniq(mapFilter(topics, 'cid'));
+//
+//			async.parallel({
+//				users: function (next) {
+//					user.getUsersFields(uids, ['uid', 'username', 'fullname', 'userslug', 'reputation', 'postcount', 'picture', 'signature', 'banned', 'status'], next);
+//				},
+//				userSettings: function (next) {
+//					user.getMultipleUserSettings(uids, next);
+//				},
+//				categories: function (next) {
+//					categories.getCategoriesFields(cids, ['cid', 'name', 'slug', 'icon', 'image', 'bgColor', 'color', 'disabled'], next);
+//				},
+//				hasRead: function (next) {
+//					Topics.hasReadTopics(tids, uid, next);
+//				},
+//				isIgnored: function (next) {
+//					Topics.isIgnoring(tids, uid, next);
+//				},
+//				bookmarks: function (next) {
+//					Topics.getUserBookmarks(tids, uid, next);
+//				},
+//				teasers: function (next) {
+//					Topics.getTeasers(topics, uid, next);
+//				},
+//				tags: function (next) {
+//					Topics.getTopicsTagsObjects(tids, next);
+//				},
+//			}, next);
+//		},
+//		function (results, next) {
+//			results.users.forEach(function (user, index) {
+//				if (parseInt(meta.config.hideFullname, 10) === 1 || !results.userSettings[index].showfullname) {
+//					user.fullname = undefined;
+//				}
+//			});
+//
+//			var users = _.zipObject(uids, results.users);
+//			var categories = _.zipObject(cids, results.categories);
+//
+//			for (var i = 0; i < topics.length; i += 1) {
+//				if (topics[i]) {
+//					topics[i].category = categories[topics[i].cid];
+//					topics[i].user = users[topics[i].uid];
+//					topics[i].teaser = results.teasers[i];
+//					topics[i].tags = results.tags[i];
+//
+//					topics[i].isOwner = parseInt(topics[i].uid, 10) === parseInt(uid, 10);
+//					topics[i].pinned = parseInt(topics[i].pinned, 10) === 1;
+//					topics[i].locked = parseInt(topics[i].locked, 10) === 1;
+//					topics[i].deleted = parseInt(topics[i].deleted, 10) === 1;
+//					topics[i].ignored = results.isIgnored[i];
+//					topics[i].unread = !results.hasRead[i] && !results.isIgnored[i];
+//					topics[i].bookmark = results.bookmarks[i];
+//					topics[i].unreplied = !topics[i].teaser;
+//
+//					topics[i].upvotes = parseInt(topics[i].upvotes, 10) || 0;
+//					topics[i].downvotes = parseInt(topics[i].downvotes, 10) || 0;
+//					topics[i].votes = topics[i].upvotes - topics[i].downvotes;
+//					topics[i].icons = [];
+//				}
+//			}
+//
+//			topics = topics.filter(function (topic) {
+//				return topic &&	topic.category && !topic.category.disabled;
+//			});
+//
+//			plugins.fireHook('filter:topics.get', { topics: topics, uid: uid }, next);
+//		},
+//		function (data, next) {
+//			next(null, data.topics);
+//		},
+//	], callback);
+//};
+
 Topics.getTopicsByTids = function (tids, uid, callback) {
-	if (!Array.isArray(tids) || !tids.length) {
-		return callback(null, []);
-	}
+    if (!Array.isArray(tids) || !tids.length) {
+        return callback(null, []);
+    }
 
-	var uids;
-	var cids;
-	var topics;
+    var uids;
+    var cids;
+    var topics;
+    var pids;
 
-	async.waterfall([
-		function (next) {
-			Topics.getTopicsData(tids, next);
-		},
-		function (_topics, next) {
-			function mapFilter(array, field) {
-				return array.map(function (topic) {
-					return topic && topic[field] && topic[field].toString();
-				}).filter(function (value) {
-					return utils.isNumber(value);
-				});
-			}
+    async.waterfall([
+        function (next) {
+            Topics.getTopicsData(tids, next);
+        },
+        function (_topics, next) {
+            function mapFilter(array, field) {
+                return array.map(function (topic) {
+                    return topic && topic[field] && topic[field].toString();
+                }).filter(function (value) {
+                    return utils.isNumber(value);
+                });
+            }
 
-			topics = _topics;
-			uids = _.uniq(mapFilter(topics, 'uid'));
-			cids = _.uniq(mapFilter(topics, 'cid'));
+            topics = _topics;
+            uids = _.uniq(mapFilter(topics, 'uid'));
+            cids = _.uniq(mapFilter(topics, 'cid'));
+            pids = _.uniq(mapFilter(topics, 'mainPid'));
 
-			async.parallel({
-				users: function (next) {
-					user.getUsersFields(uids, ['uid', 'username', 'fullname', 'userslug', 'reputation', 'postcount', 'picture', 'signature', 'banned', 'status'], next);
-				},
-				userSettings: function (next) {
-					user.getMultipleUserSettings(uids, next);
-				},
-				categories: function (next) {
-					categories.getCategoriesFields(cids, ['cid', 'name', 'slug', 'icon', 'image', 'bgColor', 'color', 'disabled'], next);
-				},
-				hasRead: function (next) {
-					Topics.hasReadTopics(tids, uid, next);
-				},
-				isIgnored: function (next) {
-					Topics.isIgnoring(tids, uid, next);
-				},
-				bookmarks: function (next) {
-					Topics.getUserBookmarks(tids, uid, next);
-				},
-				teasers: function (next) {
-					Topics.getTeasers(topics, uid, next);
-				},
-				tags: function (next) {
-					Topics.getTopicsTagsObjects(tids, next);
-				},
-			}, next);
-		},
-		function (results, next) {
-			results.users.forEach(function (user, index) {
-				if (parseInt(meta.config.hideFullname, 10) === 1 || !results.userSettings[index].showfullname) {
-					user.fullname = undefined;
-				}
-			});
+            async.parallel({
+                users: function (next) {
+                    user.getUsersFields(uids, ['uid', 'username', 'fullname', 'userslug', 'reputation', 'postcount', 'picture', 'signature', 'banned', 'status'], next);
+                },
+                categories: function (next) {
+                    categories.getCategoriesFields(cids, ['cid', 'name', 'slug', 'icon', 'image', 'bgColor', 'color', 'disabled'], next);
+                },
+                hasRead: function (next) {
+                    Topics.hasReadTopics(tids, uid, next);
+                },
+                isIgnored: function (next) {
+                    Topics.isIgnoring(tids, uid, next);
+                },
+                bookmarks: function (next) {
+                    Topics.getUserBookmarks(tids, uid, next);
+                },
+                teasers: function (next) {
+                    Topics.getTeasers(topics, uid, next);
+                },
+                tags: function (next) {
+                    Topics.getTopicsTagsObjects(tids, next);
+                },
+                posts: function (next) {
+                    posts.getPostsByPids(pids, uid, next)
+                }
+            }, next);
+        },
+        function (results, next) {
+            if (parseInt(meta.config.hideFullname, 10) === 1) {
+                results.users.forEach(function (user) {
+                    user.fullname = undefined;
+                });
+            }
 
-			var users = _.zipObject(uids, results.users);
-			var categories = _.zipObject(cids, results.categories);
+            var users = _.zipObject(uids, results.users);
+            var categories = _.zipObject(cids, results.categories);
+            var offset = 0;
 
-			for (var i = 0; i < topics.length; i += 1) {
-				if (topics[i]) {
-					topics[i].category = categories[topics[i].cid];
-					topics[i].user = users[topics[i].uid];
-					topics[i].teaser = results.teasers[i];
-					topics[i].tags = results.tags[i];
+            for (var i = 0; i < topics.length; i += 1) {
+                if (topics[i]) {
+                    topics[i].category = categories[topics[i].cid];
+                    topics[i].user = users[topics[i].uid];
+                    topics[i].teaser = results.teasers[i];
+                    topics[i].tags = results.tags[i];
 
-					topics[i].isOwner = parseInt(topics[i].uid, 10) === parseInt(uid, 10);
-					topics[i].pinned = parseInt(topics[i].pinned, 10) === 1;
-					topics[i].locked = parseInt(topics[i].locked, 10) === 1;
-					topics[i].deleted = parseInt(topics[i].deleted, 10) === 1;
-					topics[i].ignored = results.isIgnored[i];
-					topics[i].unread = !results.hasRead[i] && !results.isIgnored[i];
-					topics[i].bookmark = results.bookmarks[i];
-					topics[i].unreplied = !topics[i].teaser;
+                    topics[i].isOwner = parseInt(topics[i].uid, 10) === parseInt(uid, 10);
+                    topics[i].pinned = parseInt(topics[i].pinned, 10) === 1;
+                    topics[i].locked = parseInt(topics[i].locked, 10) === 1;
+                    topics[i].deleted = parseInt(topics[i].deleted, 10) === 1;
+                    topics[i].ignored = results.isIgnored[i];
+                    topics[i].unread = !results.hasRead[i] && !results.isIgnored[i];
+                    topics[i].bookmark = results.bookmarks[i];
+                    topics[i].unreplied = !topics[i].teaser;
+                    topics[i].posts = [results.posts[(i - offset)]];
 
-					topics[i].upvotes = parseInt(topics[i].upvotes, 10) || 0;
-					topics[i].downvotes = parseInt(topics[i].downvotes, 10) || 0;
-					topics[i].votes = topics[i].upvotes - topics[i].downvotes;
-					topics[i].icons = [];
-				}
-			}
+                    topics[i].icons = [];
+                } else {
+                    offset++;
+                }
+            }
 
-			topics = topics.filter(function (topic) {
-				return topic &&	topic.category && !topic.category.disabled;
-			});
+            topics = topics.filter(function (topic) {
+                return topic &&    topic.category && !topic.category.disabled;
+            });
 
-			plugins.fireHook('filter:topics.get', { topics: topics, uid: uid }, next);
-		},
-		function (data, next) {
-			next(null, data.topics);
-		},
-	], callback);
+            plugins.fireHook('filter:topics.get', { topics: topics, uid: uid }, next);
+        },
+        function (data, next) {
+            next(null, data.topics);
+        },
+    ], callback);
 };
+
 
 Topics.getTopicWithPosts = function (topicData, set, uid, start, stop, reverse, callback) {
 	async.waterfall([
