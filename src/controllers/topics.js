@@ -160,7 +160,7 @@ topicsController.get = function (req, res, callback) {
 			topicData.postDeleteDuration = parseInt(meta.config.postDeleteDuration, 10) || 0;
 			topicData.scrollToMyPost = settings.scrollToMyPost;
 			topicData.rssFeedUrl = nconf.get('relative_path') + '/topic/' + topicData.tid + '.rss';
-			if (req.uid) {
+			if (req.loggedIn) {
 				topicData.rssFeedUrl += '?uid=' + req.uid + '&token=' + rssToken;
 			}
 
@@ -179,7 +179,7 @@ topicsController.get = function (req, res, callback) {
 				req.session.tids_viewed[tid] = Date.now();
 			}
 
-			if (req.uid) {
+			if (req.loggedIn) {
 				topics.markAsRead([tid], req.uid, function (err, markedRead) {
 					if (err) {
 						return callback(err);
@@ -401,7 +401,7 @@ topicsController.pagination = function (req, res, callback) {
 		}
 
 		var postCount = parseInt(results.topic.postcount, 10);
-		var pageCount = Math.max(1, Math.ceil((postCount - 1) / results.settings.postsPerPage));
+		var pageCount = Math.max(1, Math.ceil(postCount / results.settings.postsPerPage));
 
 		var paginationData = pagination.create(currentPage, pageCount);
 		paginationData.rel.forEach(function (rel) {

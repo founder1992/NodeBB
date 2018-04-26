@@ -157,15 +157,21 @@ function completeConfigSetup(config, next) {
 		}
 	}
 
+	// Add package_manager object if set
+	if (nconf.get('package_manager')) {
+		config.package_manager = nconf.get('package_manager');
+	}
+
+	nconf.overrides(config);
 	async.waterfall([
-		function (next) {
-			install.save(config, next);
-		},
 		function (next) {
 			require('./database').init(next);
 		},
 		function (next) {
 			require('./database').createIndices(next);
+		},
+		function (next) {
+			install.save(config, next);
 		},
 	], next);
 }
@@ -450,11 +456,11 @@ function enableDefaultPlugins(next) {
 
 	if (customDefaults && customDefaults.length) {
 		try {
-			customDefaults = JSON.parse(customDefaults);
+			customDefaults = Array.isArray(customDefaults) ? customDefaults : JSON.parse(customDefaults);
 			defaultEnabled = defaultEnabled.concat(customDefaults);
 		} catch (e) {
 			// Invalid value received
-			winston.warn('[install/enableDefaultPlugins] Invalid defaultPlugins value received. Ignoring.');
+			winston.info('[install/enableDefaultPlugins] Invalid defaultPlugins value received. Ignoring.');
 		}
 	}
 
@@ -523,7 +529,7 @@ install.setup = function (callback) {
 	], function (err, results) {
 		if (err) {
 			winston.warn('NodeBB Setup Aborted.\n ' + err.stack);
-			process.exit();
+			process.exit(1);
 		} else {
 			var data = {};
 			if (results[6]) {

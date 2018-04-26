@@ -53,6 +53,7 @@
     "topics": "موضوع ها",
     "posts": "دیدگاه‌ها",
     "best": "بهترین",
+    "votes": "رای ها",
     "upvoters": "موافقین",
     "upvoted": "رای مثبت",
     "downvoters": "مخالفین",
@@ -105,5 +106,6 @@
     "cookies.learn_more": "بیشتر بدانید",
     "edited": "Edited",
     "disabled": "Disabled",
-    "select": "Select"
+    "select": "Select",
+    "user-search-prompt": "Type something here to find users..."
 }

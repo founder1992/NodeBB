@@ -53,6 +53,7 @@
     "topics": "נושאים",
     "posts": "פוסטים",
     "best": "הגבוה ביותר",
+    "votes": "הצבעות",
     "upvoters": "מצביעי בעד",
     "upvoted": "הוצבע בעד",
     "downvoters": "מצביעי נגד",
@@ -105,5 +106,6 @@
     "cookies.learn_more": "למד עוד",
     "edited": "נערך",
     "disabled": "לא מאופשר",
-    "select": "בחר"
+    "select": "בחר",
+    "user-search-prompt": "נסה כאן למציאת משתמשים"
 }

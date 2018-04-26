@@ -53,6 +53,7 @@
     "topics": "게시물",
     "posts": "포스트",
     "best": "베스트",
+    "votes": "Votes",
     "upvoters": "추천한 사용자",
     "upvoted": "추천된 게시물",
     "downvoters": "비추천한 사용자",
@@ -105,5 +106,6 @@
     "cookies.learn_more": "더 보기",
     "edited": "수정 되었습니다.",
     "disabled": "비활성화",
-    "select": "선택"
+    "select": "선택",
+    "user-search-prompt": "Type something here to find users..."
 }

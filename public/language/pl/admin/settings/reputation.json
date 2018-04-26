@@ -5,5 +5,8 @@
 	"votes-are-public": "Wszystkie głosy są publiczne",
 	"thresholds": "Progi aktywności",
 	"min-rep-downvote": "Minimalna reputacja, aby negatywnie oceniać posty",
-	"min-rep-flag": "Minimalna reputacja, aby flagować posty"
+	"min-rep-flag": "Minimalna reputacja, aby flagować posty",
+	"min-rep-website": "Minimalna reputacja aby dodać sekcję \"Strona WWW\" w profilu użytkownika",
+	"min-rep-aboutme": "Minimalna reputacja aby dodać sekcję \"O mnie\" w profilu użytkownika",
+	"min-rep-signature": "Minimalna reputacja aby dodać sekcję \"Sygnatura\" w profilu użytkownika"
 }

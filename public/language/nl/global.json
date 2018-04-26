@@ -53,6 +53,7 @@
     "topics": "Onderwerpen",
     "posts": "Berichten",
     "best": "Beste",
+    "votes": "Stemmen",
     "upvoters": "Positieve stemmers",
     "upvoted": "Omhoog gestemd",
     "downvoters": "Negatieve stemmers",
@@ -105,5 +106,6 @@
     "cookies.learn_more": "Meer",
     "edited": "Bewerkt",
     "disabled": "Uitgeschakeld",
-    "select": "Selecteer"
+    "select": "Selecteer",
+    "user-search-prompt": "Typ hier om gebruikers te vinden..."
 }

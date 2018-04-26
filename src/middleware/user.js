@@ -14,7 +14,7 @@ var controllers = {
 
 module.exports = function (middleware) {
 	middleware.authenticate = function (req, res, next) {
-		if (req.uid) {
+		if (req.loggedIn) {
 			return next();
 		}
 
@@ -44,7 +44,7 @@ module.exports = function (middleware) {
 		*/
 		async.waterfall([
 			function (next) {
-				if (!req.uid) {
+				if (!req.loggedIn) {
 					return setImmediate(next, null, false);
 				}
 
@@ -64,7 +64,7 @@ module.exports = function (middleware) {
 	}
 
 	middleware.checkGlobalPrivacySettings = function (req, res, next) {
-		if (!req.uid && !!parseInt(meta.config.privateUserInfo, 10)) {
+		if (!req.loggedIn && !!parseInt(meta.config.privateUserInfo, 10)) {
 			return middleware.authenticate(req, res, next);
 		}
 
@@ -177,7 +177,7 @@ module.exports = function (middleware) {
 				var disabled = parseInt(meta.config.adminReloginDuration, 10) === 0;
 				if (disabled || (loginTime && parseInt(loginTime, 10) > Date.now() - adminReloginDuration)) {
 					var timeLeft = parseInt(loginTime, 10) - (Date.now() - adminReloginDuration);
-					if (timeLeft < Math.min(300000, adminReloginDuration)) {
+					if (req.session.meta && timeLeft < Math.min(300000, adminReloginDuration)) {
 						req.session.meta.datetime += Math.min(300000, adminReloginDuration);
 					}
 
@@ -202,7 +202,7 @@ module.exports = function (middleware) {
 	};
 
 	middleware.requireUser = function (req, res, next) {
-		if (req.uid) {
+		if (req.loggedIn) {
 			return next();
 		}
 

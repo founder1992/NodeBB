@@ -53,6 +53,7 @@
     "topics": "Emner",
     "posts": "Indlæg",
     "best": "Bedste",
+    "votes": "Votes",
     "upvoters": "Upvoters",
     "upvoted": "Syntes godt om",
     "downvoters": "Downvoters",
@@ -105,5 +106,6 @@
     "cookies.learn_more": "Learn More",
     "edited": "Edited",
     "disabled": "Disabled",
-    "select": "Select"
+    "select": "Select",
+    "user-search-prompt": "Type something here to find users..."
 }

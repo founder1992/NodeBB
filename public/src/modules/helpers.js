@@ -46,8 +46,7 @@
 			if ((properties.loggedIn && !loggedIn) ||
 				(properties.guestOnly && loggedIn) ||
 				(properties.globalMod && !data.isGlobalMod && !data.isAdmin) ||
-				(properties.adminOnly && !data.isAdmin) ||
-				(properties.searchInstalled && !data.searchEnabled)) {
+				(properties.adminOnly && !data.isAdmin)) {
 				return false;
 			}
 		}
@@ -127,11 +126,11 @@
 		category.children.forEach(function (child) {
 			if (child && !child.isSection) {
 				var link = child.link ? child.link : (relative_path + '/category/' + child.slug);
-				html += '<a href="' + link + '">' +
-						'<span class="fa-stack fa-lg">' +
-						'<i style="color:' + child.bgColor + ';" class="fa fa-circle fa-stack-2x"></i>' +
-						'<i style="color:' + child.color + ';" class="fa fa-stack-1x ' + child.icon + '"></i>' +
-						'</span><small>' + child.name + '</small></a> ';
+				html += '<span class="category-children-item pull-left">' +
+					'<div class="icon pull-left" style="' + generateCategoryBackground(child) + '">' +
+					'<i class="fa fa-fw ' + child.icon + '"></i>' +
+					'</div>' +
+					'<a href="' + link + '"><small>' + child.name + '</small></a></span>';
 			}
 		});
 		html = html ? ('<span class="category-children">' + html + '</span>') : html;

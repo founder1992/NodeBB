@@ -5,5 +5,7 @@
 	"disable-editing-help": "Administratorzy oraz moderatorzy globalni są wyjęci spod tego ograniczenia",
 	"max-length": "Maksymalna długość wiadomości czat",
 	"max-room-size": "Maksymalna liczba użytkowników w pokojach czatu.",
-	"delay": "Czas pomiędzy wiadomościami czat (w milisekundach)"
+	"delay": "Czas pomiędzy wiadomościami czat (w milisekundach)",
+	"restrictions.seconds-edit-after": "Limit sekund kiedy użytkownicy będą mogli edytować komunikat czatu po jego napisaniu. (0 wyłączone)",
+	"restrictions.seconds-delete-after": "Limit sekund kiedy użytkownicy będą mogli skasować komunikat czatu po jego napisaniu. (0 wyłączone)"
 }

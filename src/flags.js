@@ -93,7 +93,7 @@ Flags.get = function (flagId, callback) {
 				// Final object return construction
 				next(err, Object.assign(data.base, {
 					description: validator.escape(data.base.description),
-					datetimeISO: new Date(parseInt(data.base.datetime, 10)).toISOString(),
+					datetimeISO: utils.toISOString(data.base.datetime),
 					target_readable: data.base.type.charAt(0).toUpperCase() + data.base.type.slice(1) + ' ' + data.base.targetId,
 					target: payload.targetObj,
 					history: data.history,
@@ -201,9 +201,9 @@ Flags.list = function (filters, uid, callback) {
 					}
 
 					next(null, Object.assign(flagObj, {
-						description: validator.escape(flagObj.description),
+						description: validator.escape(String(flagObj.description)),
 						target_readable: flagObj.type.charAt(0).toUpperCase() + flagObj.type.slice(1) + ' ' + flagObj.targetId,
-						datetimeISO: new Date(parseInt(flagObj.datetime, 10)).toISOString(),
+						datetimeISO: utils.toISOString(flagObj.datetime),
 					}));
 				});
 			}, next);
@@ -241,7 +241,7 @@ Flags.validate = function (payload, callback) {
 					return callback(err);
 				}
 
-				var minimumReputation = utils.isNumber(meta.config['privileges:flag']) ? parseInt(meta.config['privileges:flag'], 10) : 0;
+				var minimumReputation = utils.isNumber(meta.config['min:rep:flag']) ? parseInt(meta.config['min:rep:flag'], 10) : 0;
 				// Check if reporter meets rep threshold (or can edit the target post, in which case threshold does not apply)
 				if (!editable.flag && parseInt(data.reporter.reputation, 10) < minimumReputation) {
 					return callback(new Error('[[error:not-enough-reputation-to-flag]]'));
@@ -257,7 +257,7 @@ Flags.validate = function (payload, callback) {
 					return callback(err);
 				}
 
-				var minimumReputation = utils.isNumber(meta.config['privileges:flag']) ? parseInt(meta.config['privileges:flag'], 10) : 0;
+				var minimumReputation = utils.isNumber(meta.config['min:rep:flag']) ? parseInt(meta.config['min:rep:flag'], 10) : 0;
 				// Check if reporter meets rep threshold (or can edit the target user, in which case threshold does not apply)
 				if (!editable && parseInt(data.reporter.reputation, 10) < minimumReputation) {
 					return callback(new Error('[[error:not-enough-reputation-to-flag]]'));
@@ -288,7 +288,7 @@ Flags.getNotes = function (flagId, callback) {
 						uid: noteObj[0],
 						content: noteObj[1],
 						datetime: note.score,
-						datetimeISO: new Date(parseInt(note.score, 10)).toISOString(),
+						datetimeISO: utils.toISOString(note.score),
 					};
 				} catch (e) {
 					return next(e);
@@ -387,7 +387,7 @@ Flags.create = function (type, id, uid, reason, timestamp, callback) {
 				tasks.push(async.apply(Flags.update, flagId, uid, { state: 'open' }));
 			}
 
-			async.parallel(tasks, function (err) {
+			async.series(tasks, function (err) {
 				next(err, flagId);
 			});
 		},
@@ -572,7 +572,7 @@ Flags.getHistory = function (flagId, callback) {
 					uid: entry.value[0],
 					fields: changeset,
 					datetime: entry.score,
-					datetimeISO: new Date(parseInt(entry.score, 10)).toISOString(),
+					datetimeISO: utils.toISOString(entry.score),
 				};
 			});
 
@@ -645,10 +645,18 @@ Flags.notify = function (flagObj, uid, callback) {
 			admins: async.apply(groups.getMembers, 'administrators', 0, -1),
 			globalMods: async.apply(groups.getMembers, 'Global Moderators', 0, -1),
 			moderators: function (next) {
+				var cid;
 				async.waterfall([
 					async.apply(posts.getCidByPid, flagObj.targetId),
-					function (cid, next) {
-						groups.getMembers('cid:' + cid + ':privileges:moderate', 0, -1, next);
+					function (_cid, next) {
+						cid = _cid;
+						groups.getMembers('cid:' + cid + ':privileges:groups:moderate', 0, -1, next);
+					},
+					function (moderatorGroups, next) {
+						groups.getMembersOfGroups(moderatorGroups.concat(['cid:' + cid + ':privileges:moderate']), next);
+					},
+					function (members, next) {
+						next(null, _.flatten(members));
 					},
 				], next);
 			},
@@ -681,7 +689,13 @@ Flags.notify = function (flagObj, uid, callback) {
 				plugins.fireHook('action:flags.create', {
 					flag: flagObj,
 				});
-				notifications.push(notification, results.admins.concat(results.moderators).concat(results.globalMods), callback);
+
+				var uids = results.admins.concat(results.moderators).concat(results.globalMods);
+				uids = uids.filter(function (_uid) {
+					return parseInt(_uid, 10) !== parseInt(uid, 10);
+				});
+
+				notifications.push(notification, uids, callback);
 			});
 		});
 		break;

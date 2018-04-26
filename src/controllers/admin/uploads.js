@@ -4,15 +4,111 @@ var path = require('path');
 var async = require('async');
 var nconf = require('nconf');
 var mime = require('mime');
+var fs = require('fs');
+var jimp = require('jimp');
 
 var meta = require('../../meta');
 var file = require('../../file');
 var image = require('../../image');
 var plugins = require('../../plugins');
+var pagination = require('../../pagination');
 
 var allowedImageTypes = ['image/png', 'image/jpeg', 'image/pjpeg', 'image/jpg', 'image/gif', 'image/svg+xml'];
 
 var uploadsController = module.exports;
+
+uploadsController.get = function (req, res, next) {
+	var currentFolder = path.join(nconf.get('upload_path'), req.query.dir || '');
+	if (!currentFolder.startsWith(nconf.get('upload_path'))) {
+		return next(new Error('[[error:invalid-path]]'));
+	}
+	var itemsPerPage = 20;
+	var itemCount = 0;
+	var page = parseInt(req.query.page, 10) || 1;
+	async.waterfall([
+		function (next) {
+			fs.readdir(currentFolder, next);
+		},
+		function (files, next) {
+			files = files.filter(function (filename) {
+				return filename !== '.gitignore';
+			});
+
+			itemCount = files.length;
+			var start = Math.max(0, (page - 1) * itemsPerPage);
+			var stop = start + itemsPerPage;
+			files = files.slice(start, stop);
+
+			filesToData(currentFolder, files, next);
+		},
+		function (files) {
+			files.sort(function (a, b) {
+				if (a.isDirectory && !b.isDirectory) {
+					return -1;
+				} else if (!a.isDirectory && b.isDirectory) {
+					return 1;
+				}
+				return 0;
+			});
+			res.render('admin/manage/uploads', {
+				currentFolder: currentFolder.replace(nconf.get('upload_path'), ''),
+				files: files,
+				breadcrumbs: buildBreadcrumbs(currentFolder),
+				pagination: pagination.create(page, Math.ceil(itemCount / itemsPerPage), req.query),
+			});
+		},
+	], next);
+};
+
+function buildBreadcrumbs(currentFolder) {
+	var crumbs = [];
+	var parts = currentFolder.replace(nconf.get('upload_path'), '').split(path.sep);
+	var currentPath = '';
+	parts.forEach(function (part) {
+		var dir = path.join(currentPath, part);
+		crumbs.push({
+			text: part || 'Uploads',
+			url: part
+				? (nconf.get('relative_path') + '/admin/manage/uploads?dir=' + dir)
+				: nconf.get('relative_path') + '/admin/manage/uploads',
+		});
+		currentPath = dir;
+	});
+
+	return crumbs;
+}
+
+function filesToData(currentDir, files, callback) {
+	async.map(files, function (file, next) {
+		var stat;
+		async.waterfall([
+			function (next) {
+				fs.stat(path.join(currentDir, file), next);
+			},
+			function (_stat, next) {
+				stat = _stat;
+				if (stat.isDirectory()) {
+					fs.readdir(path.join(currentDir, file), next);
+				} else {
+					next(null, []);
+				}
+			},
+			function (filesInDir, next) {
+				var url = nconf.get('upload_url') + currentDir.replace(nconf.get('upload_path'), '') + '/' + file;
+				next(null, {
+					name: file,
+					path: path.join(currentDir, file).replace(nconf.get('upload_path'), ''),
+					url: url,
+					fileCount: Math.max(0, filesInDir.length - 1), // ignore .gitignore
+					size: stat.size,
+					sizeHumanReadable: (stat.size / 1024).toFixed(1) + 'KiB',
+					isDirectory: stat.isDirectory(),
+					isFile: stat.isFile(),
+				});
+			},
+		], next);
+	}, callback);
+}
 
 uploadsController.uploadCategoryPicture = function (req, res, next) {
 	var uploadedFile = req.files.files[0];
@@ -110,6 +206,25 @@ uploadsController.uploadSound = function (req, res, next) {
 	});
 };
 
+uploadsController.uploadFile = function (req, res, next) {
+	var uploadedFile = req.files.files[0];
+	var params;
+	try {
+		params = JSON.parse(req.body.params);
+	} catch (e) {
+		file.delete(uploadedFile.path);
+		return next(new Error('[[error:invalid-json]]'));
+	}
+
+	file.saveFileToLocal(uploadedFile.name, params.folder, uploadedFile.path, function (err, data) {
+		file.delete(uploadedFile.path);
+		if (err) {
+			return next(err);
+		}
+		res.json([{ url: data.url }]);
+	});
+};
+
 uploadsController.uploadDefaultAvatar = function (req, res, next) {
 	upload('avatar-default', req, res, next);
 };
@@ -141,7 +256,7 @@ function uploadImage(filename, folder, uploadedFile, req, res, next) {
 	async.waterfall([
 		function (next) {
 			if (plugins.hasListeners('filter:uploadImage')) {
-				plugins.fireHook('filter:uploadImage', { image: uploadedFile, uid: req.user.uid }, next);
+				plugins.fireHook('filter:uploadImage', { image: uploadedFile, uid: req.uid }, next);
 			} else {
 				file.saveFileToLocal(filename, folder, uploadedFile.path, next);
 			}
@@ -161,6 +276,17 @@ function uploadImage(filename, folder, uploadedFile, req, res, next) {
 				], function (err) {
 					next(err, imageData);
 				});
+			} else if (path.basename(filename, path.extname(filename)) === 'og:image' && folder === 'system') {
+				jimp.read(imageData.path).then(function (image) {
+					meta.configs.setMultiple({
+						'og:image:height': image.bitmap.height,
+						'og:image:width': image.bitmap.width,
+					}, function (err) {
+						next(err, imageData);
+					});
+				}).catch(function (err) {
+					next(err);
+				});
 			} else {
 				setImmediate(next, null, imageData);
 			}
@@ -173,3 +299,4 @@ function uploadImage(filename, folder, uploadedFile, req, res, next) {
 		res.json([{ name: uploadedFile.name, url: image.url.startsWith('http') ? image.url : nconf.get('relative_path') + image.url }]);
 	});
 }
+

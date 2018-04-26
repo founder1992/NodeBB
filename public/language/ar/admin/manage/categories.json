@@ -1,6 +1,6 @@
 {
-	"settings": "Category Settings",
-	"privileges": "Privileges",
+	"settings": "اعدادات القسم",
+	"privileges": "الصلاحيات",
 
 	"name": "Category Name",
 	"description": "Category Description",
@@ -65,5 +65,7 @@
 	"alert.find-user": "Find a User",
 	"alert.user-search": "Search for a user here...",
 	"alert.find-group": "Find a Group",
-	"alert.group-search": "Search for a group here..."
+	"alert.group-search": "Search for a group here...",
+	"collapse-all": "Collapse All",
+	"expand-all": "Expand All"
 }

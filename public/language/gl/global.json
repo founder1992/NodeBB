@@ -53,6 +53,7 @@
     "topics": "Temas",
     "posts": "Publicacións",
     "best": "Mellor",
+    "votes": "Votes",
     "upvoters": "Positivos",
     "upvoted": "Votado positivamente",
     "downvoters": "Negativos",
@@ -105,5 +106,6 @@
     "cookies.learn_more": "Saber máis",
     "edited": "Edited",
     "disabled": "Disabled",
-    "select": "Select"
+    "select": "Select",
+    "user-search-prompt": "Type something here to find users..."
 }

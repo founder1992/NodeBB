@@ -10,11 +10,14 @@ define('autocomplete', function () {
 			input.autocomplete({
 				delay: 200,
 				open: function () {
-					$(this).autocomplete('widget').css('z-index', 20000);
+					$(this).autocomplete('widget').css('z-index', 100005);
 				},
 				select: onselect,
 				source: function (request, response) {
-					socket.emit('user.search', { query: request.term }, function (err, result) {
+					socket.emit('user.search', {
+						query: request.term,
+						paginate: false,
+					}, function (err, result) {
 						if (err) {
 							return app.alertError(err.message);
 						}
@@ -29,6 +32,11 @@ define('autocomplete', function () {
 										uid: user.uid,
 										name: user.username,
 										slug: user.userslug,
+										username: user.username,
+										userslug: user.userslug,
+										picture: user.picture,
+										'icon:text': user['icon:text'],
+										'icon:bgColor': user['icon:bgColor'],
 									},
 								};
 							});

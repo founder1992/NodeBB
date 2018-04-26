@@ -71,7 +71,7 @@ describe('User', function () {
 
 		it('should error with invalid password', function (done) {
 			User.create({ username: 'test', password: '1' }, function (err) {
-				assert.equal(err.message, '[[user:change_password_error_length]]');
+				assert.equal(err.message, '[[reset_password:password_too_short]]');
 				done();
 			});
 		});
@@ -471,6 +471,40 @@ describe('User', function () {
 				});
 			});
 		});
+
+		it('.commit() should invalidate old codes', function (done) {
+			var code1;
+			var code2;
+			var uid;
+			async.waterfall([
+				function (next) {
+					User.create({ username: 'doublereseter', email: 'sorry@forgot.com', password: '123456' }, next);
+				},
+				function (_uid, next) {
+					uid = _uid;
+					User.reset.generate(uid, next);
+				},
+				function (code, next) {
+					code1 = code;
+					User.reset.generate(uid, next);
+				},
+				function (code, next) {
+					code2 = code;
+					User.reset.validate(code1, next);
+				},
+				function (isValid, next) {
+					assert(isValid);
+					User.reset.commit(code2, 'newPwd123', next);
+				},
+				function (next) {
+					User.reset.validate(code1, next);
+				},
+				function (isValid, next) {
+					assert(!isValid);
+					next();
+				},
+			], done);
+		});
 	});
 
 	describe('hash methods', function () {
@@ -782,7 +816,7 @@ describe('User', function () {
 					}, function (err, uploadedPicture) {
 						assert.ifError(err);
 						assert.equal(uploadedPicture.url, '/assets/uploads/profile/' + uid + '-profileavatar.png');
-						assert.equal(uploadedPicture.path, path.join(nconf.get('base_dir'), 'public', 'uploads', 'profile', uid + '-profileavatar.png'));
+						assert.equal(uploadedPicture.path, path.join(nconf.get('upload_path'), 'profile', uid + '-profileavatar.png'));
 						done();
 					});
 				}
@@ -1399,7 +1433,7 @@ describe('User', function () {
 				username: 'rejectme',
 				password: '123456',
 				'password-confirm': '123456',
-				email: '<script>alert("ok");<script>reject@me.com',
+				email: '<script>alert("ok")<script>reject@me.com',
 			}, function (err) {
 				assert.ifError(err);
 				helpers.loginUser('admin', '123456', function (err, jar) {
@@ -1407,7 +1441,7 @@ describe('User', function () {
 					request(nconf.get('url') + '/api/admin/manage/registration', { jar: jar, json: true }, function (err, res, body) {
 						assert.ifError(err);
 						assert.equal(body.users[0].username, 'rejectme');
-						assert.equal(body.users[0].email, '&lt;script&gt;alert(&quot;ok&quot;);&lt;script&gt;reject@me.com');
+						assert.equal(body.users[0].email, '&lt;script&gt;alert(&quot;ok&quot;)&lt;script&gt;reject@me.com');
 						done();
 					});
 				});

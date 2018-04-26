@@ -53,6 +53,7 @@
     "topics": "المواضيع",
     "posts": "المشاركات",
     "best": "الأفضل",
+    "votes": "Votes",
     "upvoters": "الموافقين",
     "upvoted": "مصوت بالموجب",
     "downvoters": "مصوتين بالسالب",
@@ -105,5 +106,6 @@
     "cookies.learn_more": "أعرف المزيد",
     "edited": "حُرِر",
     "disabled": "معطل",
-    "select": "تحديد"
+    "select": "تحديد",
+    "user-search-prompt": "Type something here to find users..."
 }

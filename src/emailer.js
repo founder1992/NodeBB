@@ -10,6 +10,7 @@ var htmlToText = require('html-to-text');
 var url = require('url');
 var path = require('path');
 var fs = require('fs');
+var _ = require('lodash');
 
 var User = require('./user');
 var Plugins = require('./plugins');
@@ -32,9 +33,9 @@ Emailer.transports = {
 var app;
 
 var viewsDir = nconf.get('views_dir');
-var emailsPath = path.join(viewsDir, 'emails');
 
 Emailer.getTemplates = function (config, cb) {
+	var emailsPath = path.join(viewsDir, 'emails');
 	async.waterfall([
 		function (next) {
 			file.walk(emailsPath, next);
@@ -211,12 +212,23 @@ Emailer.sendToEmail = function (template, email, language, params, callback) {
 
 	async.waterfall([
 		function (next) {
+			Plugins.fireHook('filter:email.params', {
+				template: template,
+				email: email,
+				language: lang,
+				params: params,
+			}, next);
+		},
+		function (result, next) {
+			template = result.template;
+			email = result.email;
+			params = result.params;
 			async.parallel({
 				html: function (next) {
-					Emailer.renderAndTranslate(template, params, lang, next);
+					Emailer.renderAndTranslate(template, params, result.language, next);
 				},
 				subject: function (next) {
-					translator.translate(params.subject, lang, function (translated) {
+					translator.translate(params.subject, result.language, function (translated) {
 						next(null, translated);
 					});
 				},
@@ -228,7 +240,7 @@ Emailer.sendToEmail = function (template, email, language, params, callback) {
 				to: email,
 				from: meta.config['email:from'] || 'no-reply@' + getHostname(),
 				from_name: meta.config['email:from_name'] || 'NodeBB',
-				subject: results.subject,
+				subject: '[' + meta.config.title + '] ' + results.subject,
 				html: results.html,
 				plaintext: htmlToText.fromString(results.html, {
 					ignoreImage: true,
@@ -289,11 +301,10 @@ function buildCustomTemplates(config) {
 						file.walk(viewsDir, next);
 					},
 					function (paths, next) {
-						paths = paths.reduce(function (obj, p) {
-							var relative = path.relative(viewsDir, p);
-							obj['/' + relative] = p;
-							return obj;
-						}, {});
+						paths = _.fromPairs(paths.map(function (p) {
+							var relative = path.relative(viewsDir, p).replace(/\\/g, '/');
+							return [relative, p];
+						}));
 						meta.templates.processImports(paths, template.path, template.text, next);
 					},
 					function (source, next) {
